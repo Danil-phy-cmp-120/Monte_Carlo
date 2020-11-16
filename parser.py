@@ -513,17 +513,19 @@ else:
     lines = f.readlines()
     f.close()
 
-magmom = np.zeros(int(sum(conc)))
+magmom = np.zeros(int(max(atoms)))
 flag = False
-for i in range(int(sum(conc))):
-    for line in lines[len(lines)-500:len(lines)]:
+n = 0
+for i in range(max(atoms)):
+    for line in lines[len(lines)-200:len(lines)]:
         inp = line.split()
-        if len(inp) > 9 and flag == True and inp[0] == 'sum':
-            magmom[i] = inp[4]
-            flag = False
-        if len(inp) > 5 and inp[1] == 'E=' and inp[4] == 'IT=' and int(inp[5]) == (i+1):
+        if len(inp) > 5 and inp[1] == 'E=' and inp[4] == 'IT=' and int(inp[5]) == i+1:
             flag = True
-#print(magmom)
+        if len(inp) > 9 and flag == True and inp[0] == 'sum':
+            magmom[n] = float(inp[4])
+            flag = False
+    n = n + 1
+print(magmom)
 
 
 # Сохранение файла задачи для кода C++#
