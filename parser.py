@@ -17,7 +17,7 @@ from scipy import integrate
 L = 6
 neighbors = 20
 
-T_start = 0.0
+T_start = 10.0
 T_end = 1600.0
 T_step = 20.0
 
@@ -25,7 +25,7 @@ nmcs = 10000
 nstep = 400
 mcs_start = int(nmcs/10)
 
-J_T_accounting = False
+J_T_accounting = True
 ##########################################################
 
 R = 8.314459848  # Дж/(моль*K) 
@@ -155,7 +155,7 @@ if J_T_accounting == True:
             Data += [float(path[d]), (float(E)*13.605692)/4]
 
     Data = np.array(Data)
-    Data.shape = ((Data.size/2,2))
+    Data.shape = ((int(Data.size/2),2))
     Data = Data[Data[:,0].argsort()]
     #print(Data)
 
@@ -319,7 +319,7 @@ if J_T_accounting == True:
                 #print(A)
  
                 basis = np.array(Data_lattice[9:len(Data_lattice)])
-                basis.shape = (len(basis)/3, 3)
+                basis.shape = (int(len(basis)/3), 3)
                 #print(basis)
 
                 # Считываем тип атомов #
@@ -353,7 +353,7 @@ if J_T_accounting == True:
                         J_all += ["{:.0f}".format(float(inp[5])), "{:.0f}".format(float(inp[11]))]
 
                 J_all = np.array(J_all, dtype=float)
-                J_all.shape = (J_all.size/7, 7)
+                J_all.shape = (int(J_all.size/7), 7)
                 #print J_all
 
                 
@@ -385,7 +385,7 @@ for DR_used in DR_single_cut:
 
 J = np.array(J)
 if J_T_accounting == True:
-    J.shape = (J.size/(6+col_add), (6+col_add))
+    J.shape = (int(J.size/(6+col_add)), int(6+col_add))
 else:
         J.shape = (int(J.size/7), 7)
 
@@ -401,7 +401,7 @@ for i in range(J.shape[0]):
                 new_J += [float(J[i,6+k])]
 J = np.array(new_J)
 if J_T_accounting == True:
-    J.shape = (J.size/(6+col_add), (6+col_add))
+    J.shape = (int(J.size/(6+col_add)), int(6+col_add))
 else:
         J.shape = (int(J.size/7), 7)
 
@@ -429,7 +429,7 @@ for i in range(J.shape[0]):
 
 J = np.array(new_J)
 if J_T_accounting == True:
-    J.shape = (J.size/(6+col_add), (6+col_add))
+    J.shape = (int(J.size/(6+col_add)), int(6+col_add))
 else:
         J.shape = (int(J.size/7), 7)
 #print(J)
