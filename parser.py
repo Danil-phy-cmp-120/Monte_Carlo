@@ -14,14 +14,14 @@ from scipy import constants
 from scipy import integrate
 
 ##########################################################
-L = 10
+L = 6
 neighbors = 20
 
-T_start = 800.0
-T_end = 1400.0
-T_step = 10.0
+T_start = 0.0
+T_end = 1600.0
+T_step = 20.0
 
-nmcs = 100000
+nmcs = 10000
 nstep = 400
 mcs_start = int(nmcs/10)
 
@@ -541,6 +541,7 @@ file.write(str(mcs_start) + ' ')
 
 file.write(str(L) + ' ')
 file.write(str(int(sum(conc))) + ' ')
+file.write(str(max(atoms))+ ' ')
 
 file.write(str(J.shape[0]) + ' ') #Число учитываемых обменных интеграллов
 file.write(str(J.shape[1])) #Число учитываемых обменных интеграллов

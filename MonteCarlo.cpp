@@ -13,7 +13,7 @@ int main()
 {
 	
 	float T_start, T_end, T_step;
-    int nmcs, nstep, mcs_start, L, IQ_n, J_size, J_size2;
+    int nmcs, nstep, mcs_start, L, IQ_n, IQ_diff, J_size, J_size2;
     
     ofstream out_test;
     out_test.open("Test.dat");
@@ -28,14 +28,15 @@ int main()
         {
             istringstream iss(line); //Создадим поток для считывания данных из строчки
             
-            iss >> T_start >> T_end >> T_step >> nmcs >> nstep >> mcs_start >> L >> IQ_n >> J_size >> J_size2;
+            iss >> T_start >> T_end >> T_step >> nmcs >> nstep >> mcs_start >> L >> IQ_n >> IQ_diff >> J_size >> J_size2;
+            //cout << T_start << "  " << T_end << "  " << T_step << "  " << nmcs << "  " << nstep << "  " << mcs_start << "  " << L << "  " << IQ_n << "  " << J_size << "\n";
             //out_test << T_start << "  " << T_end << "  " << T_step << "  " << nmcs << "  " << nstep << "  " << mcs_start << "  " << L << "  " << IQ_n << "  " << J_size << "\n";
             
         }
     }
     f1.close();
     
-    cout << T_start << "  " << T_end << "  " << T_step << "  " << nmcs << "  " << nstep << "  " << mcs_start << "  " << L << "  " << IQ_n << "  " << J_size << "  " << J_size2 << "\n";
+    //std::cout << J_size2 << "\n";
     
     float Lattice_cpp[L*L*L*IQ_n][7];
     float J_cpp[J_size][J_size2];
@@ -62,13 +63,6 @@ int main()
         }
     }
     f2.close();
-    
-    /*for ( int i = 0; i < J_size; i++) {
-        for ( int j = 0; j < J_size2; j++) {
-            cout << J_cpp[i][j] << "\t";
-        }
-        cout << "\n";
-	}*/
         
 
     ind1 = 0;
@@ -91,15 +85,8 @@ int main()
         }
     }
     f3.close();
-    
-    for ( int i = 0; i < L*L*L*IQ_n; i++) {
-        for ( int j = 0; j < 7; j++) {
-            cout << Lattice_cpp[i][j] << "\t";
-        }
-        cout << "\n";
-	}
    
-    float magmom[IQ_n];
+    float magmom[IQ_diff];
     ind1 = 0;
     
     ifstream f4("input/magmom.dat");
@@ -121,13 +108,12 @@ int main()
 	float W, W1, W2, W_r, W_m, m, m1, m2, x0, y0, z0, x, y, z, H1 = 0.0, H2 = 0.0;
     float curentspin[3], spin_neighbors[J_size][3];
     float a[3], b[3], s[3];
-    //int Neighbors_i[L*L*L*IQ_n][J_size], Neighbors_j[L*L*L*IQ_n][J_size], num_neighbors = 0;
     int num_neighbors = 0;
     float sum_spin_x = 0.0, sum_spin_y = 0.0, sum_spin_z = 0.0;
-    float M_element[int((T_end-T_start)/T_step) + 1][IQ_n*3], M_element_square[int((T_end-T_start)/T_step) + 1][IQ_n*3], M_calculate[IQ_n*3], M_all[int((T_end-T_start)/T_step) + 1][IQ_n];
+    float M_element[int((T_end-T_start)/T_step) + 1][IQ_diff*3], M_element_square[int((T_end-T_start)/T_step) + 1][IQ_diff*3], M_calculate[IQ_diff*3], M_all[int((T_end-T_start)/T_step) + 1][IQ_diff];
     float M_all_sum = 0.0;
- 
-     // Динамические массивы //  
+    
+    // Динамические массивы //  
     int **Neighbors_i = new int* [L*L*L*IQ_n]; // строки
     for (int count = 0; count < L*L*L*IQ_n; count++)
         Neighbors_i[count] = new int [J_size]; // столбцы
@@ -146,7 +132,7 @@ int main()
         }
     }
     for ( int i = 0; i < int((T_end-T_start)/T_step) + 1; i++) {
-        for ( int j = 0; j < IQ_n*3; j++) {
+        for ( int j = 0; j < IQ_diff*3; j++) {
             M_element[i][j] = 0.0;
             M_element_square[i][j] = 0.0;
         }
@@ -360,15 +346,15 @@ int main()
     }
 	    
 	srand((unsigned)time(NULL)); // автоматическая рандомизация     
-    #pragma omp parallel for firstprivate(Lattice_cpp, J_cpp, curentspin, spin_neighbors, M_calculate) private(flag, mcs_count, mcs, W, mri, IQ_curent_atom, x0, y0, z0, x, y, z, H1, H2, W1, W2, m1, m2, m, W_r, W_m, E_calculate, E_1, E_2, num_neighbors)
+    #pragma omp parallel for firstprivate(Lattice_cpp, J_cpp, curentspin, spin_neighbors, Neighbors_i, Neighbors_j, M_calculate) private(flag, mcs_count, mcs, W, mri, IQ_curent_atom, x0, y0, z0, x, y, z, H1, H2, W1, W2, m1, m2, m, W_r, W_m, E_calculate, E_1, E_2, num_neighbors)
     
     for (int t = int(T_start); t <= int(T_end); t = t + int(T_step)) {
 		mcs_count = 0; mcs = 0;
 		for ( int n = 1; n <= nmcs; n++) { 		
 			//out_test << t << "   " << n << "   " << omp_get_thread_num() << "\n";
-			//out_test << t << "   " << n << "\n";
+			out_test << t << "   " << n << "\n";
 			//std::cout << t << "   " << n << "   " << omp_get_thread_num() << "\n";
-		    std::cout << t << "   " << n << "\n";
+			//std::cout << n << "   "  << "\n";
     		for ( int count = 1; count <= L*L*L*IQ_n; count++) { //Один шаг Монте-Карло
     			
     			W = (double)rand() / RAND_MAX; mri = int(L*L*L*(IQ_n)*W); 
@@ -468,7 +454,7 @@ int main()
             if (mcs_count == nstep){ 
 			    mcs_count = 0;	
 			    E_calculate	 = 0.0;
-			    for ( int i = 0; i < IQ_n*3; i++) {
+			    for ( int i = 0; i < IQ_diff*3; i++) {
 		    	    M_calculate[i] = 0.0;
 				}
 			    
@@ -502,9 +488,9 @@ int main()
    			        E_calculate = E_calculate + 0.5*H1; 	 
    			        
    			        ////////////////////////////////// Рассчет M ////////////////////////////////////////////////////
-		    	    for ( int i = 0; i < IQ_n; i++) {
-		    	        if ((k >= L*L*L*i) && (k < (L*L*L)*(i+1))) {
-		    	            M_calculate[0+3*i] = M_calculate[0+3*i] + Lattice_cpp[k][4];
+		    	    for ( int i = 0; i < IQ_diff; i++) {
+		    	        if (Lattice_cpp[k][0] == (i+1)) {
+		    	            M_calculate[3*i] = M_calculate[3*i] + Lattice_cpp[k][4];
 		    	            M_calculate[1+3*i] = M_calculate[1+3*i] + Lattice_cpp[k][5];
 		    	            M_calculate[2+3*i] = M_calculate[2+3*i] + Lattice_cpp[k][6];
 					    }
@@ -514,7 +500,7 @@ int main()
 		        E_1 = E_1 + E_calculate;					
                 E_2 = E_2 + E_calculate*E_calculate;
 
-                for ( int i = 0; i < IQ_n*3; i++) {
+                for ( int i = 0; i < IQ_diff*3; i++) {
 					M_element[int((t-T_start)/T_step)][i] = M_element[int((t-T_start)/T_step)][i] + M_calculate[i];
 					M_element_square[int((t-T_start)/T_step)][i] = M_element_square[int((t-T_start)/T_step)][i] + M_calculate[i]*M_calculate[i];
 				}
@@ -528,7 +514,7 @@ int main()
 	    E_1 = E_1 /((nmcs - mcs_start)/nstep);
 	    E_2 = E_2 /((nmcs - mcs_start)/nstep);    
 	    
-        for ( int j = 0; j < IQ_n*3; j++) {
+        for ( int j = 0; j < IQ_diff*3; j++) {
 			    M_element[int((t-T_start)/T_step)][j] = M_element[int((t-T_start)/T_step)][j]/(L*L*L);
 			    M_element_square[int((t-T_start)/T_step)][j] = M_element_square[int((t-T_start)/T_step)][j]/(L*L*L);
 			    M_element[int((t-T_start)/T_step)][j] = M_element[int((t-T_start)/T_step)][j]/((nmcs - mcs_start)/nstep);
@@ -541,7 +527,7 @@ int main()
         E_1 = 0.0; E_2 = 0.0;
         
         // Расчет полной намагниченности //
-        for ( int i = 0; i < IQ_n; i++) {
+        for ( int i = 0; i < IQ_diff; i++) {
 			for ( int j = 0; j < 3; j++) {
                 M_all[int((t-T_start)/T_step)][i] = M_all[int((t-T_start)/T_step)][i] + M_element[int((t-T_start)/T_step)][j+3*i]*M_element[int((t-T_start)/T_step)][j+3*i];
 			}
@@ -565,7 +551,7 @@ int main()
 	out_M.open("M_element.dat");
 	for ( int i = 0; i < int((T_end-T_start)/T_step) + 1; i++) {
 		out_M << T_start + i*T_step  << "\t";
-	    for ( int j = 0; j < IQ_n*3; j++) {
+	    for ( int j = 0; j < IQ_diff*3; j++) {
             out_M << M_element[i][j] << "\t";
         }
         out_M << "\n";
@@ -576,7 +562,7 @@ int main()
 	out_M2.open("M_element_square.dat");
 	for ( int i = 0; i < int((T_end-T_start)/T_step) + 1; i++) {
 		out_M2 << T_start + i*T_step  << "\t";
-	    for ( int j = 0; j < IQ_n*3; j++) {
+	    for ( int j = 0; j < IQ_diff*3; j++) {
             out_M2 << M_element_square[i][j] << "\t";
         }
         out_M2 << "\n";
@@ -588,7 +574,7 @@ int main()
 	for ( int i = 0; i < int((T_end-T_start)/T_step) + 1; i++) {
 		M_all_sum = 0.0;
 		out_M_all << T_start + i*T_step << "\t";
-		for ( int j = 0; j < IQ_n; j++) {
+		for ( int j = 0; j < IQ_diff; j++) {
 			M_all_sum = M_all_sum + M_all[i][j] * magmom[j];
 		}
 		out_M_all << M_all_sum  << "\n";
