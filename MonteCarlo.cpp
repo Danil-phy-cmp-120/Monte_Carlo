@@ -345,7 +345,7 @@ int main()
         out2.close();
     }
 	    
-	srand((unsigned)time(NULL)); // автоматическая рандомизация     
+    srand(static_cast<unsigned int>(time(0))); // автоматическая рандомизация     
     #pragma omp parallel for firstprivate(Lattice_cpp, J_cpp, curentspin, spin_neighbors, Neighbors_i, Neighbors_j, M_calculate) private(flag, mcs_count, mcs, W, mri, IQ_curent_atom, x0, y0, z0, x, y, z, H1, H2, W1, W2, m1, m2, m, W_r, W_m, E_calculate, E_1, E_2, num_neighbors)
     
     for (int t = int(T_start); t <= int(T_end); t = t + int(T_step)) {
