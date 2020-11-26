@@ -15,17 +15,17 @@ from scipy import integrate
 
 ##########################################################
 L = 6
-neighbors = 20
+d_a = 2.0
 
-T_start = 10.0
-T_end = 1600.0
+T_start = 0.0
+T_end = 600.0
 T_step = 20.0
 
 nmcs = 10000
 nstep = 400
 mcs_start = int(nmcs/10)
 
-J_T_accounting = True
+J_T_accounting = False
 ##########################################################
 
 R = 8.314459848  # Дж/(моль*K) 
@@ -155,7 +155,7 @@ if J_T_accounting == True:
             Data += [float(path[d]), (float(E)*13.605692)/4]
 
     Data = np.array(Data)
-    Data.shape = ((int(Data.size/2),2))
+    Data.shape = ((Data.size/2,2))
     Data = Data[Data[:,0].argsort()]
     #print(Data)
 
@@ -319,7 +319,7 @@ if J_T_accounting == True:
                 #print(A)
  
                 basis = np.array(Data_lattice[9:len(Data_lattice)])
-                basis.shape = (int(len(basis)/3), 3)
+                basis.shape = (len(basis)/3, 3)
                 #print(basis)
 
                 # Считываем тип атомов #
@@ -353,7 +353,7 @@ if J_T_accounting == True:
                         J_all += ["{:.0f}".format(float(inp[5])), "{:.0f}".format(float(inp[11]))]
 
                 J_all = np.array(J_all, dtype=float)
-                J_all.shape = (int(J_all.size/7), 7)
+                J_all.shape = (J_all.size/7, 7)
                 #print J_all
 
                 
@@ -362,30 +362,20 @@ if J_T_accounting == True:
     T_a = np.array(T_a)
    #print(col_add, T_a)
 
-
-#Учитываем только несколько координацинных сфер #
-DR = J_all[:,5]
-DR = sorted(DR)
-DR_single = []
-for i in DR:
-    if i not in DR_single:
-        DR_single.append(i)
-
-DR_single_cut = DR_single[:neighbors]
-
-for DR_used in DR_single_cut:
-    for j in range(J_all[:,5].size):  
-        if DR_used == J_all[j,5]:
-            if J_T_accounting == False:
-                J += [float(J_all[j,0]), float(J_all[j,1]), float(J_all[j,2]), float(J_all[j,3]), float(J_all[j,4]), float(J_all[j,5]), float(J_all[j,6])*1000]
-            if J_T_accounting == True:
-                J += [float(J_all[j,0]), float(J_all[j,1]), float(J_all[j,2]), float(J_all[j,3]), float(J_all[j,4]), float(J_all[j,5])]
-                for k in range(col_add):
-                    J += [float(J_all[j,6+k])*1000]
+#Учитываем обменники до определенного растояния #
+for j in range(J_all[:,5].size): 
+     print(J_all[j,5], d_a) 
+     if J_all[j,5] <= d_a:
+         if J_T_accounting == False:
+             J += [float(J_all[j,0]), float(J_all[j,1]), float(J_all[j,2]), float(J_all[j,3]), float(J_all[j,4]), float(J_all[j,5]), float(J_all[j,6])*1000]
+         if J_T_accounting == True:
+             J += [float(J_all[j,0]), float(J_all[j,1]), float(J_all[j,2]), float(J_all[j,3]), float(J_all[j,4]), float(J_all[j,5])]
+             for k in range(col_add):
+                 J += [float(J_all[j,6+k])*1000]
 
 J = np.array(J)
 if J_T_accounting == True:
-    J.shape = (int(J.size/(6+col_add)), int(6+col_add))
+    J.shape = (J.size/(6+col_add), (6+col_add))
 else:
         J.shape = (int(J.size/7), 7)
 
@@ -401,10 +391,9 @@ for i in range(J.shape[0]):
                 new_J += [float(J[i,6+k])]
 J = np.array(new_J)
 if J_T_accounting == True:
-    J.shape = (int(J.size/(6+col_add)), int(6+col_add))
+    J.shape = (J.size/(6+col_add), (6+col_add))
 else:
         J.shape = (int(J.size/7), 7)
-
 
 J_reverse = J.copy()
 for i in range(J_reverse.shape[0]):
@@ -429,7 +418,7 @@ for i in range(J.shape[0]):
 
 J = np.array(new_J)
 if J_T_accounting == True:
-    J.shape = (int(J.size/(6+col_add)), int(6+col_add))
+    J.shape = (J.size/(6+col_add), (6+col_add))
 else:
         J.shape = (int(J.size/7), 7)
 #print(J)
@@ -471,6 +460,7 @@ for j in range(len(IQ)):
     if j < len(IQ)-1:
         if IQ[j] != IQ[j+1]:
             atom_index = atom_index + 1
+
 #print(atoms)
                     
 random.seed() 
@@ -490,7 +480,9 @@ for i in range(basis[:,0].size):
                 #Lattice[n,4] = random.random() 
                 #Lattice[n,5] = random.random() 
                 #Lattice[n,6] = random.random()
-
+ 
+                #Lattice[n,4] = 1 
+                #Lattice[n,5] = 1 
                 Lattice[n,6] = 1 
                 n = n + 1
 
@@ -513,19 +505,19 @@ else:
     lines = f.readlines()
     f.close()
 
-magmom = np.zeros(int(max(atoms)))
+magmom = np.zeros(len(IQ))
 flag = False
-n = 0
-for i in range(max(atoms)):
-    for line in lines[len(lines)-200:len(lines)]:
+for i in range(len(IQ)):
+    for line in lines[len(lines)-500:len(lines)]:
         inp = line.split()
-        if len(inp) > 5 and inp[1] == 'E=' and inp[4] == 'IT=' and int(inp[5]) == i+1:
-            flag = True
-        if len(inp) > 9 and flag == True and inp[0] == 'sum':
-            magmom[n] = float(inp[4])
-            flag = False
-    n = n + 1
-print(magmom)
+        if len(inp) > 5:
+            if inp[1] == 'E=' and inp[4] == 'IT=' and inp[6] == IQ[i]:
+                flag = True
+        if len(inp) > 9:
+            if flag == True and inp[0] == 'sum':
+                magmom[i] = inp[4]
+                flag = False
+#print(magmom)
 
 
 # Сохранение файла задачи для кода C++#
@@ -541,7 +533,6 @@ file.write(str(mcs_start) + ' ')
 
 file.write(str(L) + ' ')
 file.write(str(int(sum(conc))) + ' ')
-file.write(str(max(atoms))+ ' ')
 
 file.write(str(J.shape[0]) + ' ') #Число учитываемых обменных интеграллов
 file.write(str(J.shape[1])) #Число учитываемых обменных интеграллов
