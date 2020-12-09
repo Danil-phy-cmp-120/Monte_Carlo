@@ -13,12 +13,9 @@ using namespace std;
  
 int main()
 {
-	ofstream out_test;
-    out_test.open("Test.dat");
-	
-	
+
 	float T_start, T_end, T_step;
-    int nmcs, nstep, mcs_start, L, IQ_n, IQ_diff, J_size, J_size2;
+    int nmcs, nstep, mcs_start, L, IQ_n, IQ_diff, J_size;
     ifstream f1("input/Settings.dat");
     if (f1.is_open())
 	{
@@ -26,13 +23,13 @@ int main()
         while(getline(f1, line))
         {
             istringstream iss(line);
-            iss >> T_start >> T_end >> T_step >> nmcs >> nstep >> mcs_start >> L >> IQ_n >> IQ_diff >> J_size >> J_size2;       
+            iss >> T_start >> T_end >> T_step >> nmcs >> nstep >> mcs_start >> L >> IQ_n >> IQ_diff >> J_size;       
         }
     }
     f1.close();
     
     
-    std::vector<std::vector<float> > J_cpp(J_size, std::vector<float>(J_size2));
+    std::vector<std::vector<float> > J_cpp(J_size, std::vector<float>(7));
     int ind1, ind2;
     
     ind1 = 0;
@@ -45,7 +42,7 @@ int main()
 	    {
 		    f2 >> J_cpp[ind1][ind2];
             ind2 = ind2 + 1;
-            if (ind2 >= J_size2)
+            if (ind2 >= 7)
             {
 				ind1 = ind1 + 1;
 				ind2 = 0;
@@ -90,9 +87,6 @@ int main()
     f4.close();
     
     
-    
-    
-    
     int mri, mcs = 0, mcs_count = 0, num, iterator, num_neighbors = 0;
 	float E_sys = 0, kB = 0.086173303, IQ_curent_atom, E_1 = 0.0, E_2 = 0.0, E_calculate = 0.0, W, W1, W2, W_r, W_m, m, m1, m2, x0, y0, z0, x, y, z, H1 = 0.0, H2 = 0.0, M_all_sum = 0.0, curentspin[3];
 	bool flag;
@@ -107,40 +101,8 @@ int main()
     std::vector<std::vector<float> > spin_neighbors(J_size, std::vector<float>(3));
     std::vector<float> M_calculate = std::vector<float>(IQ_diff*3);
  
-    /*// Динамические массивы //  
-    int **Neighbors_i = new int* [L*L*L*IQ_n]; 
-    for (int count = 0; count < L*L*L*IQ_n; count++)
-        Neighbors_i[count] = new int [J_size]; 
-        
-    int **Neighbors_j = new int* [L*L*L*IQ_n]; 
-    for (int count = 0; count < L*L*L*IQ_n; count++)
-        Neighbors_j[count] = new int [J_size]; 
-        
-    float **M_all = new float* [int((T_end-T_start)/T_step) + 1]; 
-    for (int count = 0; count < int((T_end-T_start)/T_step) + 1; count++)
-        M_all[count] = new float [IQ_diff];
-    
-    float **M_element = new float* [int((T_end-T_start)/T_step) + 1]; 
-    for (int count = 0; count < int((T_end-T_start)/T_step) + 1; count++)
-        M_element[count] = new float [IQ_diff*3]; 
-        
-    float **M_element_square = new float* [int((T_end-T_start)/T_step) + 1]; 
-    for (int count = 0; count < int((T_end-T_start)/T_step) + 1; count++)
-        M_element_square[count] = new float [IQ_diff*3]; 
-        
-    float **Energy = new float* [int((T_end-T_start)/T_step) + 1];
-    for (int count = 0; count < int((T_end-T_start)/T_step) + 1; count++)
-        Energy[count] = new float [2]; 
-        
-    float **spin_neighbors = new float* [J_size];
-    for (int count = 0; count < J_size; count++)
-        spin_neighbors[count] = new float [3]; 
-        
-    float *M_calculate = new float [IQ_diff*3];*/
-
-
-    // Обнуление массивов
-
+ 
+    // Обнуление массивов //
     for ( int i = 0; i < int((T_end-T_start)/T_step) + 1; i++) {
         for ( int j = 0; j < IQ_diff*3; j++) {
             M_element[i][j] = 0.0;
@@ -168,8 +130,11 @@ int main()
     #pragma omp parallel for private(num_neighbors, IQ_curent_atom, x0, y0, z0, x, y, z, flag)
     for ( int k = 0; k < L*L*L*IQ_n; k++) {
     
-	    //out_test << k << " / " << L*L*L*IQ_n << "\n";
-	    std::cout << k << " / " << L*L*L*IQ_n << "\n";
+        ofstream current_step;
+        current_step.open("current_step.dat");
+	    current_step << k << " / " << L*L*L*IQ_n << "\n";
+	    current_step.close();
+	      
         num_neighbors = 0;
     
         IQ_curent_atom = Lattice_cpp[k][0]; x0 = Lattice_cpp[k][1]; y0 = Lattice_cpp[k][2]; z0 = Lattice_cpp[k][3];
@@ -262,11 +227,14 @@ int main()
     #pragma omp parallel for firstprivate(curentspin, Lattice_cpp, spin_neighbors) private(mcs_count, mcs, W, mri, H1, H2, W1, W2, m1, m2, m, W_r, W_m, E_calculate, E_1, E_2)
     for (int t = int(T_start); t <= int(T_end); t = t + int(T_step)) {
 		mcs_count = 0; mcs = 0;
-		for ( int n = 1; n <= nmcs; n++) { 		
-			//out_test << t << "   " << n << "   " << omp_get_thread_num() << "\n";
-			//out_test << t << "   " << n << "\n";
-			std::cout << t << "   " << n << "   " << omp_get_thread_num() << "\n";
-		    //std::cout << t << "   " << n << "\n";
+		for ( int n = 1; n <= nmcs; n++) { 	
+				
+		    fstream current_step;
+            current_step.open("current_step.dat");
+	        current_step << t << "   " << n << "\n";
+	        current_step.close();
+	        
+		    //std::cout 
     		for ( int count = 1; count <= L*L*L*IQ_n; count++) { //Один шаг Монте-Карло
 				mri = dis(gen);
 	            
@@ -284,12 +252,7 @@ int main()
 
 	            for ( int i = 0; i < J_size; i++) {
 				    if (Neighbors_j[mri][i] != -1) {
-				        if (J_size2 <= 7) {
-					        H1 = H1 - (J_cpp[Neighbors_i[mri][i]][6]/kB) * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);
-					    }
-					    else {
-				            H1 = H1 - (J_cpp[Neighbors_i[mri][i]][6]*t*t + J_cpp[Neighbors_i[mri][i]][7]*t + J_cpp[Neighbors_i[mri][i]][8])/kB * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);		
-				        }
+					    H1 = H1 - (J_cpp[Neighbors_i[mri][i]][6]/kB) * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);
 				    }
                     else {
                         continue;
@@ -314,12 +277,7 @@ int main()
     	       
 	            for ( int i = 0; i < J_size; i++) {
 				    if (Neighbors_j[mri][i] != -1) {
-				        if (J_size2 <= 7) {
-					        H2 = H2 - (J_cpp[Neighbors_i[mri][i]][6]/kB) * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);
-					    }
-					    else {
-				            H2 = H2 - (J_cpp[Neighbors_i[mri][i]][6]*t*t + J_cpp[Neighbors_i[mri][i]][7]*t + J_cpp[Neighbors_i[mri][i]][8])/kB * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);		
-				        }
+				        H2 = H2 - (J_cpp[Neighbors_i[mri][i]][6]/kB) * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);
 				    }
                     else {
                         continue;
@@ -381,12 +339,7 @@ int main()
 				    H1 = 0;
 	                for ( int i = 0; i < J_size; i++) {
 				        if (Neighbors_j[mri][i] != -1) {
-				            if (J_size2 <= 7) {
-					            H1 = H1 - (J_cpp[Neighbors_i[mri][i]][6]/kB) * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);
-					         }
-					        else {
-				                H1 = H1 - (J_cpp[Neighbors_i[mri][i]][6]*t*t + J_cpp[Neighbors_i[mri][i]][7]*t + J_cpp[Neighbors_i[mri][i]][8])/kB * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);		
-				            }
+					        H1 = H1 - (J_cpp[Neighbors_i[mri][i]][6]/kB) * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);
 						}
                         else {
                              continue;
@@ -487,43 +440,4 @@ int main()
 		out_M_all << M_all_sum  << "\n";
     }
     out_M_all.close();
-    
-    out_test.close();
-
-    
-    /*for (int count = 0; count < L*L*L*IQ_n; count++) {
-        delete [] Neighbors_i[count];
-        delete [] Neighbors_j[count];
-	}
-	delete [] Neighbors_i;
-    delete [] Neighbors_j;
-    
-    for (int count = 0; count < int((T_end-T_start)/T_step) + 1; count++) {
-	    delete [] Energy[count];
-	    delete [] M_element[count];
-	    delete [] M_element_square[count];
-	    delete [] M_all[count];
-    }
-	delete [] Energy;
-    delete [] M_element;
-	delete [] M_element_square;
-    delete [] M_all; 
-    delete [] M_calculate; 
-    
-    for (int count = 0; count < J_size; count++) {
-	    delete [] spin_neighbors[count];
-    }
-    delete [] spin_neighbors;     
-    
-    for (int count = 0; count < L*L*L*IQ_n; count++) {
-		delete [] Lattice_cpp[count];
-	    //delete [] Lattice_cpp_private[count];
-	}
-    delete [] Lattice_cpp;     
-    //delete [] Lattice_cpp_private;  
-    
-    for (int count = 0; count < J_size; count++) {
-		delete [] J_cpp[count];
-	}
-    delete [] J_cpp;  */      
 }
