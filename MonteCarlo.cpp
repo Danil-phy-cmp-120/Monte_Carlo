@@ -339,7 +339,7 @@ int main()
 				    H1 = 0;
 	                for ( int i = 0; i < J_size; i++) {
 				        if (Neighbors_j[mri][i] != -1) {
-					        H1 = H1 - (J_cpp[Neighbors_i[mri][i]][6]/kB) * (spin_neighbors[Neighbors_i[mri][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[mri][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[mri][i]][2] * curentspin[2]);
+					        H1 = H1 - (J_cpp[Neighbors_i[k][i]][6]/kB) * (spin_neighbors[Neighbors_i[k][i]][0] * curentspin[0] + spin_neighbors[Neighbors_i[k][i]][1] * curentspin[1] + spin_neighbors[Neighbors_i[k][i]][2] * curentspin[2]);
 						}
                         else {
                              continue;
